@@ -1,6 +1,6 @@
 package com.template.states
 
-import com.template.contracts.TemplateContract
+import com.template.contracts.TradeContract
 import net.corda.core.contracts.BelongsToContract
 import net.corda.core.contracts.ContractState
 import net.corda.core.contracts.LinearState
@@ -13,7 +13,7 @@ import java.util.*
 // *********
 // * State *
 // *********
-@BelongsToContract(TemplateContract::class)
+@BelongsToContract(TradeContract::class)
 data class TradeState(
     val amount: Int,
     val date: Date,
