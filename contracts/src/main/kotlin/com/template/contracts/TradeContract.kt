@@ -1,6 +1,7 @@
 package com.template.contracts
 
 import com.template.states.TradeState
+import com.template.states.TradeStatus
 import net.corda.core.contracts.CommandData
 import net.corda.core.contracts.Contract
 import net.corda.core.contracts.requireSingleCommand
@@ -26,7 +27,13 @@ class TradeContract : Contract {
 
         when(command.value)
         {
-            is Commands.Submit -> requireThat {  }
+            is Commands.Submit -> requireThat {
+                "There is an input state" using (inputs.isNotEmpty())
+                "There is more than one output state" using (outputs.size != 1)
+                "Issuer cannot issue to himself" using (outputs.first().assignedBy.owningKey == outputs.first().assignedTo.owningKey)
+                "Trade amount is zero" using (outputs.first().amount == 0)
+                "Trade status should be submitted" using (outputs.first().tradeStatus != TradeStatus.SUBMITTED)
+            }
             is Commands.InProcess -> requireThat {  }
             is Commands.Settle -> requireThat {  }
             else -> throw IllegalArgumentException()
