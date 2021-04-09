@@ -2,15 +2,12 @@ package com.template
 
 import com.google.common.collect.ImmutableList
 import com.template.contracts.TradeContract
-import net.corda.testing.node.MockNetwork
-import net.corda.testing.node.StartedMockNode
 import org.junit.Before
-import net.corda.testing.node.MockNetworkParameters
-import net.corda.testing.node.TestCordapp
 import com.template.flows.TradeInitiator
 import com.template.flows.TradeSettleResponder
 import com.template.states.TradeState
 import net.corda.core.transactions.SignedTransaction
+import net.corda.testing.node.*
 import org.junit.After
 import org.junit.Test
 import java.util.*
@@ -27,8 +24,10 @@ class TradeInitiatorTests {
         network = MockNetwork(MockNetworkParameters().withCordappsForAllNodes(ImmutableList.of(
                 TestCordapp.findCordapp("com.template.contracts"),
                 TestCordapp.findCordapp("com.template.flows"))))
-        a = network.createPartyNode(null)
-        b = network.createPartyNode(null)
+
+        a = network.createNode(MockNodeParameters())
+        b = network.createNode(MockNodeParameters())
+
         // For real nodes this happens automatically, but we have to manually register the flow for tests.
         for (node in ImmutableList.of(a, b)) {
             node?.registerInitiatedFlow(TradeSettleResponder::class.java)
@@ -43,7 +42,7 @@ class TradeInitiatorTests {
 
     private fun getSignedTransaction() : SignedTransaction
     {
-        val tradeFlow = TradeInitiator(100, Calendar.getInstance().time)
+        val tradeFlow = TradeInitiator(100, b.info.legalIdentities.first())
         val future = a.startFlow(tradeFlow)
         return future.get();
     }

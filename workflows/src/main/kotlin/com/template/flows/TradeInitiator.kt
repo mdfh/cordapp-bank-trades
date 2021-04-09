@@ -4,6 +4,7 @@ import co.paralleluniverse.fibers.Suspendable
 import com.template.contracts.TradeContract
 import com.template.states.TradeState
 import com.template.states.TradeStatus
+import net.corda.core.contracts.Command
 import net.corda.core.flows.*
 import net.corda.core.identity.Party
 import net.corda.core.transactions.SignedTransaction
@@ -13,35 +14,48 @@ import java.util.*
 
 @InitiatingFlow
 @StartableByRPC
-class TradeInitiator(private val amount : Int, private val date : Date) : FlowLogic<SignedTransaction>()
+class TradeInitiator(private val amount : Int, private val assignedTo : Party) : FlowLogic<SignedTransaction>()
 {
-    override val progressTracker = ProgressTracker()
 
-    private lateinit var assignedBy: Party
-    private lateinit var assignedTo: Party
+    private final val RETREIVING_NOTARY = ProgressTracker.Step("Retrieving the notary")
+    private final val GENERATING_TRANSACTION = ProgressTracker.Step("Generating transaction")
+    private final val SIGNING_TRANSACTION = ProgressTracker.Step("Signing transaction with our private key")
+    private final val COUNTERPARTY_SESSION = ProgressTracker.Step("Sending flow to counterparty")
+    private final val FINALISING_TRANSACTION = ProgressTracker.Step("Obtaining notary signature and recording transaction")
+
+    override val progressTracker = ProgressTracker(
+        RETREIVING_NOTARY, GENERATING_TRANSACTION, SIGNING_TRANSACTION, COUNTERPARTY_SESSION, FINALISING_TRANSACTION
+    )
 
     @Suspendable
     override fun call() : SignedTransaction{
-        // Step 1. Get a reference to the notary service on our network and our key pair.
-        val notary = serviceHub.networkMapCache.notaryIdentities[0]
-        assignedBy = ourIdentity
-        assignedTo = ourIdentity
+        // Get a reference to the notary service on our network and our key pair.
+        progressTracker.currentStep = RETREIVING_NOTARY
+        val notary = serviceHub.networkMapCache.notaryIdentities.first()
 
         //Compose the Trade State
-        val output = TradeState(amount = amount, date = date, assignedBy = assignedBy, assignedTo = assignedTo, tradeStatus = TradeStatus.SUBMITTED)
+        val output = TradeState(amount, ourIdentity, assignedTo)
 
-        // Step 3. Create a new TransactionBuilder object.
+        // Create a new TransactionBuilder object.
+        progressTracker.currentStep = GENERATING_TRANSACTION
         val builder = TransactionBuilder(notary)
 
-        // Step 4. Add the trade as an output state, as well as a command to the transaction builder.
+        // Add the trade as an output state, as well as a command to the transaction builder.
         builder.addOutputState(output)
-        builder.addCommand(TradeContract.Commands.Submit(), listOf(assignedBy.owningKey, assignedBy.owningKey))
+        val command = Command(TradeContract.Commands.Submit(), ourIdentity.owningKey)
+        builder.addCommand(command)
 
-        // Step 5. Verify and sign it with our KeyPair.
-        builder.verify(serviceHub)
-        val ptx = serviceHub.signInitialTransaction(builder)
+        System.out.println("Linear ID : ${output.linearId}")
+        // Sign the transaction
+        progressTracker.currentStep = SIGNING_TRANSACTION
+        val signedTransaction = serviceHub.signInitialTransaction(builder)
 
-        // Step 6. Assuming no exceptions, we can now finalise the transaction
-        return subFlow(FinalityFlow(ptx, emptySet<FlowSession>()))
+        // Create session with counterparty
+        progressTracker.currentStep = COUNTERPARTY_SESSION
+        val otherPartySession = initiateFlow(assignedTo)
+
+        // Finalise the transaction
+        progressTracker.currentStep = FINALISING_TRANSACTION
+        return subFlow(FinalityFlow(signedTransaction, otherPartySession))
     }
 }

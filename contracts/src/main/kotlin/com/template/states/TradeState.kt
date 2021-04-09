@@ -16,10 +16,10 @@ import java.util.*
 @BelongsToContract(TradeContract::class)
 data class TradeState(
     val amount: Int,
-    val date: Date,
     val assignedBy: Party,
     val assignedTo: Party,
-    val tradeStatus : TradeStatus,
+    val date: Date = Calendar.getInstance().time,
+    val tradeStatus : TradeStatus = TradeStatus.SUBMITTED,
     override val participants: List<AbstractParty> = listOf(assignedBy, assignedTo),
     override val linearId: UniqueIdentifier = UniqueIdentifier()
 ) : ContractState, LinearState {

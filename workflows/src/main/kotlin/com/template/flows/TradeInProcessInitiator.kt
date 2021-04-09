@@ -3,8 +3,10 @@ package com.template.flows
 import co.paralleluniverse.fibers.Suspendable
 import com.template.contracts.TradeContract
 import com.template.states.TradeState
+import net.corda.core.contracts.Command
 import net.corda.core.contracts.StateAndRef
 import net.corda.core.flows.*
+import net.corda.core.identity.Party
 import net.corda.core.node.services.Vault
 import net.corda.core.node.services.vault.QueryCriteria
 import net.corda.core.transactions.SignedTransaction
@@ -14,7 +16,7 @@ import java.util.*
 
 @InitiatingFlow
 @StartableByRPC
-class TradeInProcessInitiator(private val linearId : String, private val assignToName : String) : FlowLogic<SignedTransaction>()
+class TradeInProcessInitiator(private val linearId : String) : FlowLogic<SignedTransaction>()
 {
     override val progressTracker = ProgressTracker()
 
@@ -30,21 +32,19 @@ class TradeInProcessInitiator(private val linearId : String, private val assignT
         // Get a reference to the notary service on our network and our key pair.
         // Note: ongoing work to support multiple notary identities is still in progress.
         val notary = serviceHub.networkMapCache.notaryIdentities[0]
-        val sender = ourIdentity
-        val parties = serviceHub.identityService.partiesFromName(assignToName, true)
-        val receiver = parties.iterator().next()
         val newTradeState = tradeState.markInProcess()
+        val command = Command(TradeContract.Commands.InProcess(), ourIdentity.owningKey)
         val builder = TransactionBuilder(notary)
             .addInputState(currentStateAndRefTrade)
             .addOutputState(newTradeState)
-            .addCommand(TradeContract.Commands.InProcess(), sender.owningKey, receiver.owningKey)
+            .addCommand(command)
 
 
         // Verify and sign it with our KeyPair.
         builder.verify(serviceHub)
         val ptx = serviceHub.signInitialTransaction(builder)
 
-        val assignedToSession = initiateFlow(receiver)
+        val assignedToSession = initiateFlow(ourIdentity)
         return subFlow(CollectSignaturesFlow(ptx, listOf(assignedToSession)))
     }
 }

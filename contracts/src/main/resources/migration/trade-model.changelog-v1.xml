@@ -9,7 +9,7 @@
             <column name="transaction_id" type="NVARCHAR(64)"/>
             <column name="task" type="NVARCHAR(64)"/>
             <column name="id" type="NVARCHAR(64)"/>
-            <column name="state" type="NVARCHAR(64)"/>
+            <column name="status" type="NVARCHAR(64)"/>
             <column name="amount" type="INT"/>
             <column name="date" type="TIMESTAMP"/>
         </createTable>
