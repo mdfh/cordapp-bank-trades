@@ -26,17 +26,17 @@ class TradeContract : Contract {
 
         when(command.value)
         {
-            is Commands.Submitted -> requireThat {  }
+            is Commands.Submit -> requireThat {  }
             is Commands.InProcess -> requireThat {  }
-            is Commands.Settled -> requireThat {  }
+            is Commands.Settle -> requireThat {  }
             else -> throw IllegalArgumentException()
         }
     }
 
     // Used to indicate the transaction's intent.
     interface Commands : CommandData {
-        class Submitted : Commands
+        class Submit : Commands
         class InProcess : Commands
-        class Settled : Commands
+        class Settle : Commands
     }
 }

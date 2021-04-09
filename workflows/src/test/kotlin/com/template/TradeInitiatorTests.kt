@@ -43,8 +43,8 @@ class TradeInitiatorTests {
 
     private fun getSignedTransaction() : SignedTransaction
     {
-        val toDoFlow = TradeInitiator(100, Calendar.getInstance().time)
-        val future = a.startFlow(toDoFlow)
+        val tradeFlow = TradeInitiator(100, Calendar.getInstance().time)
+        val future = a.startFlow(tradeFlow)
         return future.get();
     }
 
@@ -77,7 +77,7 @@ class TradeInitiatorTests {
     fun `transaction should have issue command`() {
         val signedTransaction = getSignedTransaction()
         val command = signedTransaction.tx.commands.first()
-        assert(command.value is TradeContract.Commands.Submitted)
+        assert(command.value is TradeContract.Commands.Submit)
     }
 
     @Test

@@ -24,8 +24,8 @@ class TradeInProcessInitiator(private val linearId : String, private val assignT
         System.out.println(q);
         val taskStatePage: Vault.Page<TradeState> = serviceHub.vaultService.queryBy(TradeState::class.java, q)
         val states: List<StateAndRef<TradeState>> = taskStatePage.states
-        val currentStateAndRefToDo = states[0]
-        val toDoState = currentStateAndRefToDo.state.data
+        val currentStateAndRefTrade = states[0]
+        val tradeState = currentStateAndRefTrade.state.data
 
         // Get a reference to the notary service on our network and our key pair.
         // Note: ongoing work to support multiple notary identities is still in progress.
@@ -33,10 +33,10 @@ class TradeInProcessInitiator(private val linearId : String, private val assignT
         val sender = ourIdentity
         val parties = serviceHub.identityService.partiesFromName(assignToName, true)
         val receiver = parties.iterator().next()
-        val newTodoState = toDoState.assign(receiver)
+        val newTradeState = tradeState.markInProcess()
         val builder = TransactionBuilder(notary)
-            .addInputState(currentStateAndRefToDo)
-            .addOutputState(newTodoState)
+            .addInputState(currentStateAndRefTrade)
+            .addOutputState(newTradeState)
             .addCommand(TradeContract.Commands.InProcess(), sender.owningKey, receiver.owningKey)
 
 

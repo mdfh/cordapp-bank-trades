@@ -19,20 +19,25 @@ data class TradeState(
     val date: Date,
     val assignedBy: Party,
     val assignedTo: Party,
+    val tradeStatus : TradeStatus,
     override val participants: List<AbstractParty> = listOf(assignedBy, assignedTo),
     override val linearId: UniqueIdentifier = UniqueIdentifier()
 ) : ContractState, LinearState {
 
-    @ConstructorForDeserialization
+   /* @ConstructorForDeserialization
     constructor(
         assignedBy: Party,
         date: Date,
         assignedTo: Party,
         amount: Int,
         linearId: UniqueIdentifier
-    ) : this(amount, date, assignedBy, assignedTo, linearId = linearId)
+    ) : this(amount, date, assignedBy, assignedTo, linearId = linearId)*/
 
-    fun assign(assignedTo: Party): TradeState {
-        return copy(assignedTo = assignedTo)
+    fun markInProcess(): TradeState {
+        return copy(tradeStatus = TradeStatus.IN_PROCESS)
+    }
+
+    fun markSettled(): TradeState {
+        return copy(tradeStatus = TradeStatus.SETTLED)
     }
 }

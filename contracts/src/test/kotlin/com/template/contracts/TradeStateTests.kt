@@ -1,6 +1,7 @@
 package com.template.contracts
 
 import com.template.states.TradeState
+import com.template.states.TradeStatus
 import net.corda.testing.node.MockServices
 import net.corda.testing.core.TestIdentity
 import net.corda.core.identity.CordaX500Name
@@ -15,7 +16,7 @@ class TradeStateTests {
     private val ledgerServices = MockServices()
     private val bankA = TestIdentity(CordaX500Name("BankA", "", "SA")).party
     private val bankB = TestIdentity(CordaX500Name("BankB", "", "SA")).party
-    private val tradeState = TradeState(100, Calendar.getInstance().time, bankA, bankB)
+    private val tradeState = TradeState(100, Calendar.getInstance().time, bankA, bankB, TradeStatus.SUBMITTED)
     @Test
     @DisplayName("trade state implements contract")
     fun tradeStateImplementsContract() {
