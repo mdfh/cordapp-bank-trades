@@ -4,6 +4,7 @@ import co.paralleluniverse.fibers.Suspendable
 import net.corda.core.flows.*
 import net.corda.core.transactions.SignedTransaction
 
+/*
 @InitiatedBy(TradeInProcessInitiator::class)
 class TradeSettleResponder     //Constructor
     (  //private variable
@@ -16,7 +17,8 @@ class TradeSettleResponder     //Constructor
             @Suspendable
             @Throws(FlowException::class)
             override fun checkTransaction(stx: SignedTransaction) {
-                /*
+                */
+/*
                  * SignTransactionFlow will automatically verify the transaction and its signatures before signing it.
                  * However, just because a transaction is contractually valid doesn’t mean we necessarily want to sign.
                  * What if we don’t want to deal with the counterparty in question, or the value is too high,
@@ -25,10 +27,11 @@ class TradeSettleResponder     //Constructor
                  * we will not sign the transaction - even if the transaction and its signatures are contractually valid.
                  * ----------
                  * For this hello-world cordapp, we will not implement any aditional checks.
-                 * */
+                 * *//*
+
             }
         })
         //Stored the transaction into data base.
         return subFlow(ReceiveFinalityFlow(counterpartySession, signedTransaction.id))
     }
-}
+}*/

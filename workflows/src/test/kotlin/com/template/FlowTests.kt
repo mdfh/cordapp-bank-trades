@@ -1,8 +1,7 @@
 package com.template
 
-import com.template.flows.TradeSettleResponder
+import com.template.flows.TradeInitResponder
 import net.corda.core.identity.CordaX500Name
-import net.corda.testing.core.internal.ContractJarTestUtils.makeTestJar
 import net.corda.testing.node.MockNetwork
 import net.corda.testing.node.MockNetworkNotarySpec
 import net.corda.testing.node.MockNodeParameters
@@ -28,7 +27,7 @@ class FlowTests {
         b = mockNetwork.createNode(MockNodeParameters())
         val startedNodes = arrayListOf(a, b)
         // For real nodes this happens automatically, but we have to manually register the flow for tests
-        startedNodes.forEach { it.registerInitiatedFlow(TradeSettleResponder::class.java) }
+        startedNodes.forEach { it.registerInitiatedFlow(TradeInitResponder::class.java) }
         mockNetwork.runNetwork()
     }
 

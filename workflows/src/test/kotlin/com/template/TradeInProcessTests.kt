@@ -2,9 +2,8 @@ package com.template
 
 import com.google.common.collect.ImmutableList
 import com.template.flows.TradeInProcessInitiator
-import com.template.flows.TradeInitiator
+import com.template.flows.TradeInProcessResponder
 import org.junit.Before
-import com.template.flows.TradeSettleResponder
 import net.corda.core.transactions.SignedTransaction
 import net.corda.testing.node.*
 import org.junit.After
@@ -25,7 +24,7 @@ class TradeInProcessTests {
         b = network.createNode(MockNodeParameters())
         // For real nodes this happens automatically, but we have to manually register the flow for tests.
         for (node in ImmutableList.of(a, b)) {
-            node?.registerInitiatedFlow(TradeSettleResponder::class.java)
+            node?.registerInitiatedFlow(TradeInProcessResponder::class.java)
         }
         network.runNetwork()
     }
@@ -37,7 +36,7 @@ class TradeInProcessTests {
 
     private fun getSignedTransaction() : SignedTransaction
     {
-        val tradeFlow = TradeInProcessInitiator("33c5d822-1084-4b96-898d-01b556962f79")
+        val tradeFlow = TradeInProcessInitiator("616ba079-8874-486a-ace4-3214e90a6e02")
         val future = b.startFlow(tradeFlow)
         return future.get();
     }

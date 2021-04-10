@@ -16,7 +16,6 @@ import java.util.*
 @StartableByRPC
 class TradeInitiator(private val amount : Int, private val assignedTo : Party) : FlowLogic<SignedTransaction>()
 {
-
     private final val RETREIVING_NOTARY = ProgressTracker.Step("Retrieving the notary")
     private final val GENERATING_TRANSACTION = ProgressTracker.Step("Generating transaction")
     private final val SIGNING_TRANSACTION = ProgressTracker.Step("Signing transaction with our private key")
@@ -45,7 +44,7 @@ class TradeInitiator(private val amount : Int, private val assignedTo : Party) :
         val command = Command(TradeContract.Commands.Submit(), ourIdentity.owningKey)
         builder.addCommand(command)
 
-        System.out.println("Linear ID : ${output.linearId}")
+        println("Linear ID : ${output.linearId}")
         // Sign the transaction
         progressTracker.currentStep = SIGNING_TRANSACTION
         val signedTransaction = serviceHub.signInitialTransaction(builder)
@@ -57,5 +56,14 @@ class TradeInitiator(private val amount : Int, private val assignedTo : Party) :
         // Finalise the transaction
         progressTracker.currentStep = FINALISING_TRANSACTION
         return subFlow(FinalityFlow(signedTransaction, otherPartySession))
+    }
+}
+
+@InitiatedBy(TradeInitiator::class)
+class TradeInitResponder(private val counterpartySession: FlowSession) : FlowLogic<SignedTransaction>() {
+    @Suspendable
+    override fun call() : SignedTransaction{
+        println("Transaction received")
+        return subFlow(ReceiveFinalityFlow(counterpartySession))
     }
 }

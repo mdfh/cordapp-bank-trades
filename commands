@@ -13,6 +13,13 @@ run vaultQuery contractStateType: com.template.states.tradeState
 
 --------------
 
-flow start TradeInProcessInitiator linearId: "33c5d822-1084-4b96-898d-01b556962f79"
+flow start TradeInProcessInitiator linearId: "01e52242-818a-4c7d-9bd9-6ed9ff0203f6"
 
 "760e6613-5470-4a2e-bc56-1ba468e13b9a"
+
+-------------
+
+To enable database
+h2Settings {
+    address: "localhost:12345"
+}

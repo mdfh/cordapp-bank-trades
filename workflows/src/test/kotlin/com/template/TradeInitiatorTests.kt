@@ -2,15 +2,14 @@ package com.template
 
 import com.google.common.collect.ImmutableList
 import com.template.contracts.TradeContract
+import com.template.flows.TradeInitResponder
 import org.junit.Before
 import com.template.flows.TradeInitiator
-import com.template.flows.TradeSettleResponder
 import com.template.states.TradeState
 import net.corda.core.transactions.SignedTransaction
 import net.corda.testing.node.*
 import org.junit.After
 import org.junit.Test
-import java.util.*
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 
@@ -30,7 +29,7 @@ class TradeInitiatorTests {
 
         // For real nodes this happens automatically, but we have to manually register the flow for tests.
         for (node in ImmutableList.of(a, b)) {
-            node?.registerInitiatedFlow(TradeSettleResponder::class.java)
+            node?.registerInitiatedFlow(TradeInitResponder::class.java)
         }
         network.runNetwork()
     }
