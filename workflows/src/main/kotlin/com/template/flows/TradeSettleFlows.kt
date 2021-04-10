@@ -13,16 +13,10 @@ import net.corda.core.transactions.TransactionBuilder
 import net.corda.core.utilities.ProgressTracker
 import java.lang.IllegalStateException
 import java.util.*
-import net.corda.core.flows.CollectSignaturesFlow
-import net.corda.core.flows.CollectSignaturesFlow.Companion.tracker
-import net.corda.core.flows.FlowSession
-
-
-
 
 @InitiatingFlow
 @StartableByRPC
-class TradeInProcessInitiator(private val linearId : String) : FlowLogic<SignedTransaction>()
+class TradeSettleInitiator(private val linearId : String) : FlowLogic<SignedTransaction>()
 {
     private final val QUERY_STATE = ProgressTracker.Step("Query State")
     private final val RETREIVING_NOTARY = ProgressTracker.Step("Retrieving the notary")
@@ -44,9 +38,9 @@ class TradeInProcessInitiator(private val linearId : String) : FlowLogic<SignedT
         val states: List<StateAndRef<TradeState>> = taskStatePage.states
 
         if(states.isEmpty())
-           throw IllegalStateException("Cannot query state with linear ID")
+            throw IllegalStateException("Cannot query state with linear ID")
 
-        val currentStateAndRefTrade = states[0]
+        val currentStateAndRefTrade = states.last()
         val tradeState = currentStateAndRefTrade.state.data
 
         // Get a reference to the notary service on our network and our key pair.
@@ -55,7 +49,8 @@ class TradeInProcessInitiator(private val linearId : String) : FlowLogic<SignedT
 
         // Mark trade as InProcess and create new command
         val newTradeState = tradeState.markInProcess()
-        val command = Command(TradeContract.Commands.InProcess(), listOf(
+        val command = Command(
+            TradeContract.Commands.Settle(), listOf(
             ourIdentity.owningKey))
 
         // Create transaction builder
@@ -80,7 +75,7 @@ class TradeInProcessInitiator(private val linearId : String) : FlowLogic<SignedT
 }
 
 @InitiatedBy(TradeInProcessInitiator::class)
-class TradeInProcessResponder(private val counterpartySession: FlowSession) : FlowLogic<SignedTransaction>() {
+class TradeSettleResponder(private val counterpartySession: FlowSession) : FlowLogic<SignedTransaction>() {
     @Suspendable
     override fun call() : SignedTransaction{
         println("Transaction received")
