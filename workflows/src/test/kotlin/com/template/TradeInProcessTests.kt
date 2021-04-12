@@ -1,6 +1,7 @@
 package com.template
 
 import com.google.common.collect.ImmutableList
+import com.template.flows.TradeInProcessInfo
 import com.template.flows.TradeInProcessInitiator
 import com.template.flows.TradeInProcessResponder
 import org.junit.Before
@@ -36,7 +37,7 @@ class TradeInProcessTests {
 
     private fun getSignedTransaction() : SignedTransaction
     {
-        val tradeFlow = TradeInProcessInitiator("616ba079-8874-486a-ace4-3214e90a6e02")
+        val tradeFlow = TradeInProcessInitiator(TradeInProcessInfo("616ba079-8874-486a-ace4-3214e90a6e02"))
         val future = b.startFlow(tradeFlow)
         return future.get();
     }

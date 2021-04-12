@@ -16,10 +16,11 @@ import java.util.*
 import net.corda.core.flows.CollectSignaturesFlow
 import net.corda.core.flows.CollectSignaturesFlow.Companion.tracker
 import net.corda.core.flows.FlowSession
+import net.corda.core.serialization.CordaSerializable
 
 @InitiatingFlow
 @StartableByRPC
-class TradeInProcessInitiator(private val linearId : String) : FlowLogic<SignedTransaction>()
+class TradeInProcessInitiator(private val info : TradeInProcessInfo) : FlowLogic<SignedTransaction>()
 {
     private final val QUERY_STATE = ProgressTracker.Step("Query State")
     private final val RETREIVING_NOTARY = ProgressTracker.Step("Retrieving the notary")
@@ -36,7 +37,7 @@ class TradeInProcessInitiator(private val linearId : String) : FlowLogic<SignedT
     override fun call() : SignedTransaction {
         // Query state
         progressTracker.currentStep = QUERY_STATE
-        val q: QueryCriteria = QueryCriteria.LinearStateQueryCriteria(null, listOf(UUID.fromString(linearId)))
+        val q: QueryCriteria = QueryCriteria.LinearStateQueryCriteria(null, listOf(UUID.fromString(info.linearId)))
         val taskStatePage: Vault.Page<TradeState> = serviceHub.vaultService.queryBy(TradeState::class.java, q)
         val states: List<StateAndRef<TradeState>> = taskStatePage.states
 
@@ -84,3 +85,6 @@ class TradeInProcessResponder(private val counterpartySession: FlowSession) : Fl
         return subFlow(ReceiveFinalityFlow(counterpartySession))
     }
 }
+
+@CordaSerializable
+class TradeInProcessInfo(val linearId: String)
