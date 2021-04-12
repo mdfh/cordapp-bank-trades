@@ -7,6 +7,7 @@ import com.template.states.TradeStatus
 import net.corda.core.contracts.Command
 import net.corda.core.flows.*
 import net.corda.core.identity.Party
+import net.corda.core.serialization.CordaSerializable
 import net.corda.core.transactions.SignedTransaction
 import net.corda.core.transactions.TransactionBuilder
 import net.corda.core.utilities.ProgressTracker
@@ -14,7 +15,7 @@ import java.util.*
 
 @InitiatingFlow
 @StartableByRPC
-class TradeInitiator(private val amount : Int, private val assignedTo : Party) : FlowLogic<SignedTransaction>()
+class TradeInitiator(private val tradeInfo : TradeInfo, private val assignedTo : Party) : FlowLogic<SignedTransaction>()
 {
     private final val RETREIVING_NOTARY = ProgressTracker.Step("Retrieving the notary")
     private final val GENERATING_TRANSACTION = ProgressTracker.Step("Generating transaction")
@@ -33,7 +34,7 @@ class TradeInitiator(private val amount : Int, private val assignedTo : Party) :
         val notary = serviceHub.networkMapCache.notaryIdentities.first()
 
         //Compose the Trade State
-        val output = TradeState(amount, ourIdentity, assignedTo)
+        val output = TradeState(tradeInfo.amount, ourIdentity, assignedTo)
 
         // Create a new TransactionBuilder object.
         progressTracker.currentStep = GENERATING_TRANSACTION
@@ -67,3 +68,6 @@ class TradeInitResponder(private val counterpartySession: FlowSession) : FlowLog
         return subFlow(ReceiveFinalityFlow(counterpartySession))
     }
 }
+
+@CordaSerializable
+class TradeInfo(val amount: Int)

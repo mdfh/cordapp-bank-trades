@@ -8,6 +8,7 @@ import net.corda.core.contracts.StateAndRef
 import net.corda.core.flows.*
 import net.corda.core.node.services.Vault
 import net.corda.core.node.services.vault.QueryCriteria
+import net.corda.core.serialization.CordaSerializable
 import net.corda.core.transactions.SignedTransaction
 import net.corda.core.transactions.TransactionBuilder
 import net.corda.core.utilities.ProgressTracker
@@ -74,7 +75,7 @@ class TradeSettleInitiator(private val linearId : String) : FlowLogic<SignedTran
     }
 }
 
-@InitiatedBy(TradeInProcessInitiator::class)
+@InitiatedBy(TradeSettleInitiator::class)
 class TradeSettleResponder(private val counterpartySession: FlowSession) : FlowLogic<SignedTransaction>() {
     @Suspendable
     override fun call() : SignedTransaction{

@@ -2,6 +2,7 @@ package com.template
 
 import com.google.common.collect.ImmutableList
 import com.template.contracts.TradeContract
+import com.template.flows.TradeInfo
 import com.template.flows.TradeInitResponder
 import org.junit.Before
 import com.template.flows.TradeInitiator
@@ -41,7 +42,7 @@ class TradeInitiatorTests {
 
     private fun getSignedTransaction() : SignedTransaction
     {
-        val tradeFlow = TradeInitiator(100, b.info.legalIdentities.first())
+        val tradeFlow = TradeInitiator(TradeInfo(100), b.info.legalIdentities.first())
         val future = a.startFlow(tradeFlow)
         return future.get();
     }
