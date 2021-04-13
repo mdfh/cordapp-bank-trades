@@ -85,18 +85,7 @@ class TradeInProcessResponder(private val counterpartySession: FlowSession) : Fl
     @Suspendable
     override fun call() : SignedTransaction{
         println("Transaction received")
-        val signTransactionFlow = object : SignTransactionFlow(counterpartySession) {
-            override fun checkTransaction(stx: SignedTransaction)
-            {
-                val trade = stx.coreTransaction.outputStates.single() as TradeState
-                requireThat {
-                    "Assigned to wrong node" using (trade.assignedTo == ourIdentity)
-                    "Trade status is incorrect" using (trade.tradeStatus == TradeStatus.IN_PROCESS)
-                }
-            }
-        }
-        val txId = subFlow(signTransactionFlow).id
-        return subFlow(ReceiveFinalityFlow(counterpartySession, expectedTxId = txId))
+        return subFlow(ReceiveFinalityFlow(counterpartySession))
     }
 }
 

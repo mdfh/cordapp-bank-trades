@@ -1,9 +1,7 @@
 package com.banks.trade.webserver
 
-import com.template.flows.TradeInProcessInfo
+import com.template.flows.*
 import com.template.flows.TradeInProcessInitiator
-import com.template.flows.TradeInfo
-import com.template.flows.TradeInitiator
 import com.template.states.TradeState
 import com.template.states.TradeStatus
 import net.corda.core.contracts.StateAndRef
@@ -65,6 +63,9 @@ class MainController(rpc: NodeRPCConnection) {
                 .map { it.legalIdentities.first().name.toX500Name().toDisplayString() })
     }
 
+    /**
+     * Get Trades
+     */
     @GetMapping(value = ["traders"], produces = arrayOf(MediaType.APPLICATION_JSON_VALUE))
     fun getTraders(@RequestParam(value = "status") status: String)   : List<StateAndRef<TradeState>>
     {
@@ -73,6 +74,9 @@ class MainController(rpc: NodeRPCConnection) {
             .filter { (state) -> state.data.tradeStatus ==  tradeStatus}
     }
 
+    /**
+     * Issue Trade
+     */
     @PostMapping(value = ["issueTrade/{receiver}"])
     fun issueTrade(@RequestBody tradeInfo: TradeInfo, @PathVariable receiver: String): ResponseEntity<String>
     {
@@ -89,12 +93,30 @@ class MainController(rpc: NodeRPCConnection) {
         }
     }
 
+    /**
+     * Mark trade as In Process
+     */
     @PostMapping(value = ["processTrade"])
     fun processTrade(@RequestBody info: TradeInProcessInfo): ResponseEntity<String>
     {
         return try {
             val result = proxy.startFlow(::TradeInProcessInitiator,info).returnValue.get()
             ResponseEntity.status(HttpStatus.CREATED).body("InProcess Trade ${result.id} Completed")
+
+        } catch (e: Exception) {
+            ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.message)
+        }
+    }
+
+    /**
+     * Mark trade as Settled
+     */
+    @PostMapping(value = ["settle"])
+    fun settleTrade(@RequestBody info: TradeInProcessInfo): ResponseEntity<String>
+    {
+        return try {
+            val result = proxy.startFlow(::TradeSettleInitiator,info).returnValue.get()
+            ResponseEntity.status(HttpStatus.CREATED).body("Settle Trade ${result.id} Completed")
 
         } catch (e: Exception) {
             ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.message)

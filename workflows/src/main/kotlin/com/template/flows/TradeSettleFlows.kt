@@ -20,7 +20,7 @@ import java.util.*
 
 @InitiatingFlow
 @StartableByRPC
-class TradeSettleInitiator(private val linearId : String) : FlowLogic<SignedTransaction>()
+class TradeSettleInitiator(private val info : TradeInProcessInfo) : FlowLogic<SignedTransaction>()
 {
     private final val QUERY_STATE = ProgressTracker.Step("Query State")
     private final val RETREIVING_NOTARY = ProgressTracker.Step("Retrieving the notary")
@@ -37,7 +37,7 @@ class TradeSettleInitiator(private val linearId : String) : FlowLogic<SignedTran
     override fun call() : SignedTransaction {
         // Query state
         progressTracker.currentStep = QUERY_STATE
-        val q: QueryCriteria = QueryCriteria.LinearStateQueryCriteria(null, listOf(UUID.fromString(linearId)))
+        val q: QueryCriteria = QueryCriteria.LinearStateQueryCriteria(null, listOf(UUID.fromString(info.linearId)))
         val taskStatePage: Vault.Page<TradeState> = serviceHub.vaultService.queryBy(TradeState::class.java, q)
         val states: List<StateAndRef<TradeState>> = taskStatePage.states
 
@@ -83,18 +83,6 @@ class TradeSettleResponder(private val counterpartySession: FlowSession) : FlowL
     @Suspendable
     override fun call() : SignedTransaction{
         println("Transaction received")
-        println("Transaction received")
-        val signTransactionFlow = object : SignTransactionFlow(counterpartySession) {
-            override fun checkTransaction(stx: SignedTransaction)
-            {
-                val trade = stx.coreTransaction.outputStates.single() as TradeState
-                requireThat {
-                    "Assigned to wrong node" using (trade.assignedTo == ourIdentity)
-                    "Trade status is incorrect" using (trade.tradeStatus == TradeStatus.SETTLED)
-                }
-            }
-        }
-        val txId = subFlow(signTransactionFlow).id
-        return subFlow(ReceiveFinalityFlow(counterpartySession, expectedTxId = txId))
+        return subFlow(ReceiveFinalityFlow(counterpartySession))
     }
 }

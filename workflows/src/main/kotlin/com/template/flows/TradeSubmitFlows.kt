@@ -72,8 +72,8 @@ class TradeInitResponder(private val counterpartySession: FlowSession) : FlowLog
                 override fun checkTransaction(stx: SignedTransaction) {
                     println("Check Transaction received")
                     val ledgerTx = stx.toLedgerTransaction(serviceHub, false)
-                    val proposee = ledgerTx.outputsOfType<TradeState>().single().assignedTo
-                    if (proposee != ourIdentity) {
+                    val assignedTo = ledgerTx.outputsOfType<TradeState>().single().assignedTo
+                    if (assignedTo != ourIdentity) {
                         throw FlowException("Assigned to wrong person")
                     }
                 }
