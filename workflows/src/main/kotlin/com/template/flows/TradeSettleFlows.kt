@@ -3,8 +3,11 @@ package com.template.flows
 import co.paralleluniverse.fibers.Suspendable
 import com.template.contracts.TradeContract
 import com.template.states.TradeState
+import com.template.states.TradeStatus
 import net.corda.core.contracts.Command
+import net.corda.core.contracts.Requirements.using
 import net.corda.core.contracts.StateAndRef
+import net.corda.core.contracts.requireThat
 import net.corda.core.flows.*
 import net.corda.core.node.services.Vault
 import net.corda.core.node.services.vault.QueryCriteria
@@ -48,8 +51,8 @@ class TradeSettleInitiator(private val linearId : String) : FlowLogic<SignedTran
         progressTracker.currentStep = RETREIVING_NOTARY
         val notary = serviceHub.networkMapCache.notaryIdentities[0]
 
-        // Mark trade as InProcess and create new command
-        val newTradeState = tradeState.markInProcess()
+        // Mark trade as Settled and create new command
+        val newTradeState = tradeState.markSettled()
         val command = Command(
             TradeContract.Commands.Settle(), listOf(
             ourIdentity.owningKey))
@@ -80,6 +83,18 @@ class TradeSettleResponder(private val counterpartySession: FlowSession) : FlowL
     @Suspendable
     override fun call() : SignedTransaction{
         println("Transaction received")
-        return subFlow(ReceiveFinalityFlow(counterpartySession))
+        println("Transaction received")
+        val signTransactionFlow = object : SignTransactionFlow(counterpartySession) {
+            override fun checkTransaction(stx: SignedTransaction)
+            {
+                val trade = stx.coreTransaction.outputStates.single() as TradeState
+                requireThat {
+                    "Assigned to wrong node" using (trade.assignedTo == ourIdentity)
+                    "Trade status is incorrect" using (trade.tradeStatus == TradeStatus.SETTLED)
+                }
+            }
+        }
+        val txId = subFlow(signTransactionFlow).id
+        return subFlow(ReceiveFinalityFlow(counterpartySession, expectedTxId = txId))
     }
 }

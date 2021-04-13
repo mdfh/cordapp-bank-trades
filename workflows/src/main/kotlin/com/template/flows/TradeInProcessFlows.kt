@@ -3,8 +3,11 @@ package com.template.flows
 import co.paralleluniverse.fibers.Suspendable
 import com.template.contracts.TradeContract
 import com.template.states.TradeState
+import com.template.states.TradeStatus
 import net.corda.core.contracts.Command
+import net.corda.core.contracts.Requirements.using
 import net.corda.core.contracts.StateAndRef
+import net.corda.core.contracts.requireThat
 import net.corda.core.flows.*
 import net.corda.core.node.services.Vault
 import net.corda.core.node.services.vault.QueryCriteria
@@ -82,7 +85,18 @@ class TradeInProcessResponder(private val counterpartySession: FlowSession) : Fl
     @Suspendable
     override fun call() : SignedTransaction{
         println("Transaction received")
-        return subFlow(ReceiveFinalityFlow(counterpartySession))
+        val signTransactionFlow = object : SignTransactionFlow(counterpartySession) {
+            override fun checkTransaction(stx: SignedTransaction)
+            {
+                val trade = stx.coreTransaction.outputStates.single() as TradeState
+                requireThat {
+                    "Assigned to wrong node" using (trade.assignedTo == ourIdentity)
+                    "Trade status is incorrect" using (trade.tradeStatus == TradeStatus.IN_PROCESS)
+                }
+            }
+        }
+        val txId = subFlow(signTransactionFlow).id
+        return subFlow(ReceiveFinalityFlow(counterpartySession, expectedTxId = txId))
     }
 }
 

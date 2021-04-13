@@ -7,6 +7,7 @@ Flows
 Submit flows
 
 start TradeInitiator amount: 10, assignedTo: "O=PartyB,L=New York,C=US"
+start TradeInitiator tradeInfo: { amount: 1000 }, assignedTo: "O=PartyB,L=New York,C=US"
 
 run vaultQuery contractStateType: com.template.states.tradeState
 

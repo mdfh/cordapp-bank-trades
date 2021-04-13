@@ -29,15 +29,6 @@ data class TradeState(
     override val linearId: UniqueIdentifier = UniqueIdentifier()
 ) : ContractState, LinearState, QueryableState {
 
-   /* @ConstructorForDeserialization
-    constructor(
-        assignedBy: Party,
-        date: Date,
-        assignedTo: Party,
-        amount: Int,
-        linearId: UniqueIdentifier
-    ) : this(amount, date, assignedBy, assignedTo, linearId = linearId)*/
-
     fun markInProcess(): TradeState {
         return copy(tradeStatus = TradeStatus.IN_PROCESS)
     }

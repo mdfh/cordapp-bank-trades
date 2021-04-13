@@ -5,6 +5,7 @@ import com.template.contracts.TradeContract
 import com.template.states.TradeState
 import com.template.states.TradeStatus
 import net.corda.core.contracts.Command
+import net.corda.core.contracts.requireThat
 import net.corda.core.flows.*
 import net.corda.core.identity.Party
 import net.corda.core.serialization.CordaSerializable
@@ -42,7 +43,7 @@ class TradeInitiator(private val tradeInfo : TradeInfo, private val assignedTo :
 
         // Add the trade as an output state, as well as a command to the transaction builder.
         builder.addOutputState(output)
-        val command = Command(TradeContract.Commands.Submit(), ourIdentity.owningKey)
+        val command = Command(TradeContract.Commands.Submit(), listOf(ourIdentity.owningKey, assignedTo.owningKey))
         builder.addCommand(command)
 
         println("Linear ID : ${output.linearId}")
@@ -52,20 +53,35 @@ class TradeInitiator(private val tradeInfo : TradeInfo, private val assignedTo :
 
         // Create session with counterparty
         progressTracker.currentStep = COUNTERPARTY_SESSION
-        val otherPartySession = initiateFlow(assignedTo)
+        val otherPartySession = listOf(initiateFlow(assignedTo))
 
+        val fullSignedTransaction = subFlow(CollectSignaturesFlow(signedTransaction, otherPartySession))
         // Finalise the transaction
         progressTracker.currentStep = FINALISING_TRANSACTION
-        return subFlow(FinalityFlow(signedTransaction, otherPartySession))
+        return subFlow(FinalityFlow(fullSignedTransaction, otherPartySession))
     }
 }
 
 @InitiatedBy(TradeInitiator::class)
-class TradeInitResponder(private val counterpartySession: FlowSession) : FlowLogic<SignedTransaction>() {
+class TradeInitResponder(private val counterpartySession: FlowSession) : FlowLogic<Unit>() {
     @Suspendable
-    override fun call() : SignedTransaction{
-        println("Transaction received")
-        return subFlow(ReceiveFinalityFlow(counterpartySession))
+    override fun call() {
+        try {
+            println("Transaction received")
+            val stx = subFlow(object : SignTransactionFlow(counterpartySession) {
+                override fun checkTransaction(stx: SignedTransaction) {
+                    println("Check Transaction received")
+                    val ledgerTx = stx.toLedgerTransaction(serviceHub, false)
+                    val proposee = ledgerTx.outputsOfType<TradeState>().single().assignedTo
+                    if (proposee != ourIdentity) {
+                        throw FlowException("Assigned to wrong person")
+                    }
+                }
+            })
+            subFlow(ReceiveFinalityFlow(otherSideSession  = counterpartySession, expectedTxId  = stx.id))
+        } catch (e: Exception) {
+            throw FlowException(e)
+        }
     }
 }
 
