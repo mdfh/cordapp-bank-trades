@@ -43,6 +43,7 @@ open class NodeRPCConnection(
         val rpcClient = CordaRPCClient(rpcAddress)
         val rpcConnection = rpcClient.start(username, password)
         proxy = rpcConnection.proxy
+
     }
 
     @PreDestroy
