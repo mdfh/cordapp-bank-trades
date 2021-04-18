@@ -32,17 +32,19 @@ class TradeContract : Contract {
                 "There is more than one output state" using (outputs.size == 1)
                 "Issuer cannot issue to himself" using (outputs.first().assignedBy.owningKey != outputs.first().assignedTo.owningKey)
                 "Trade amount is zero" using (outputs.first().amount != 0)
-                "Trade status should be Submitted" using (outputs.first().tradeStatus == TradeStatus.SUBMITTED)
+                "Trade status should be SUBMITTED" using (outputs.first().tradeStatus == TradeStatus.SUBMITTED)
             }
             is Commands.InProcess -> requireThat {
                 "There is more that one input state" using (inputs.size == 1)
                 "There is more that one output state" using (outputs.size == 1)
-                "Trade status should be InProcess" using (outputs.first().tradeStatus == TradeStatus.IN_PROCESS)
+                "Trade input state should be SUBMITTED" using (inputs.first().tradeStatus == TradeStatus.SUBMITTED)
+                "Trade status should be IN_PROCESS" using (outputs.first().tradeStatus == TradeStatus.IN_PROCESS)
             }
             is Commands.Settle -> requireThat {
-                "There is more that one input state" using (inputs.size == 2)
+                "There is more that one input state" using (inputs.size == 1)
                 "There is more that one output state" using (outputs.size == 1)
-                "Trade status should be InProcess" using (outputs.first().tradeStatus == TradeStatus.SUBMITTED)
+                "Trade input state should be IN_PROCESS" using (inputs.first().tradeStatus == TradeStatus.IN_PROCESS)
+                "Trade status should be SETTLED" using (outputs.first().tradeStatus == TradeStatus.SETTLED)
             }
             else -> throw IllegalArgumentException()
         }

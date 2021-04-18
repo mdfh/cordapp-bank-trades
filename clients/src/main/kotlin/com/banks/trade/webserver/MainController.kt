@@ -5,6 +5,7 @@ import com.template.flows.TradeInProcessInitiator
 import com.template.states.TradeState
 import com.template.states.TradeStatus
 import net.corda.core.contracts.StateAndRef
+import net.corda.core.contracts.UniqueIdentifier
 import net.corda.core.internal.toX500Name
 import net.corda.core.messaging.startFlow
 import net.corda.core.node.NodeInfo
@@ -19,6 +20,7 @@ import org.springframework.http.MediaType
 import org.springframework.http.MediaType.APPLICATION_JSON_VALUE
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.*
+import java.util.*
 
 
 val SERVICE_NAMES = listOf("Notary", "Network Map Service")
@@ -27,7 +29,7 @@ val SERVICE_NAMES = listOf("Notary", "Network Map Service")
  *  A Spring Boot Server API controller for interacting with the node via RPC.
  */
 
-@CrossOrigin(origins = ["http://localhost:62893"], maxAge = 3600)
+@CrossOrigin(origins = ["http://localhost:8081", "", ""], maxAge = 3600)
 @RestController
 @RequestMapping("/api") // The paths for requests are relative to this base path.
 class MainController(rpc: NodeRPCConnection) {
@@ -69,25 +71,30 @@ class MainController(rpc: NodeRPCConnection) {
      * Get Trades
      */
     @GetMapping(value = ["traders"], produces = arrayOf(MediaType.APPLICATION_JSON_VALUE))
-    fun getTraders(@RequestParam(value = "status") status: String)   : List<StateAndRef<TradeState>>
-    {
-        val tradeStatus = TradeStatus.valueOf(status)
-        return proxy.vaultQuery(TradeState::class.java).states
-            .filter { (state) -> state.data.tradeStatus ==  tradeStatus}
+    fun getTraders(@RequestParam(value = "status") status: String?, @RequestParam(value = "id") id: String?): List<StateAndRef<TradeState>> {
+        return if (status != null) {
+            val tradeStatus = TradeStatus.valueOf(status)
+            proxy.vaultQuery(TradeState::class.java).states
+                    .filter { (state) -> state.data.tradeStatus == tradeStatus }
+        } else if (id != null) {
+            proxy.vaultQuery(TradeState::class.java).states
+                    .filter { (state) -> state.data.linearId.id == UUID.fromString(id) }
+        } else {
+            proxy.vaultQuery(TradeState::class.java).states
+        }
     }
 
     /**
      * Issue Trade
      */
     @PostMapping(value = ["issueTrade/{receiver}"])
-    fun issueTrade(@RequestBody tradeInfo: TradeInfo, @PathVariable receiver: String): ResponseEntity<String>
-    {
+    fun issueTrade(@RequestBody tradeInfo: TradeInfo, @PathVariable receiver: String): ResponseEntity<String> {
         val matchingPasties = proxy.partiesFromName(receiver, false)
         print("-------------")
         print(receiver)
         print("-------------")
         return try {
-            val result = proxy.startFlow(::TradeInitiator,tradeInfo, matchingPasties.first()).returnValue.get()
+            val result = proxy.startFlow(::TradeInitiator, tradeInfo, matchingPasties.first()).returnValue.get()
             ResponseEntity.status(HttpStatus.CREATED).body("Issue Insurance ${result.id} Completed")
 
         } catch (e: Exception) {
@@ -99,10 +106,9 @@ class MainController(rpc: NodeRPCConnection) {
      * Mark trade as In Process
      */
     @PostMapping(value = ["processTrade"])
-    fun processTrade(@RequestBody info: TradeInProcessInfo): ResponseEntity<String>
-    {
+    fun processTrade(@RequestBody info: TradeInProcessInfo): ResponseEntity<String> {
         return try {
-            val result = proxy.startFlow(::TradeInProcessInitiator,info).returnValue.get()
+            val result = proxy.startFlow(::TradeInProcessInitiator, info).returnValue.get()
             ResponseEntity.status(HttpStatus.CREATED).body("InProcess Trade ${result.id} Completed")
 
         } catch (e: Exception) {
@@ -114,10 +120,9 @@ class MainController(rpc: NodeRPCConnection) {
      * Mark trade as Settled
      */
     @PostMapping(value = ["settle"])
-    fun settleTrade(@RequestBody info: TradeInProcessInfo): ResponseEntity<String>
-    {
+    fun settleTrade(@RequestBody info: TradeInProcessInfo): ResponseEntity<String> {
         return try {
-            val result = proxy.startFlow(::TradeSettleInitiator,info).returnValue.get()
+            val result = proxy.startFlow(::TradeSettleInitiator, info).returnValue.get()
             ResponseEntity.status(HttpStatus.CREATED).body("Settle Trade ${result.id} Completed")
 
         } catch (e: Exception) {
