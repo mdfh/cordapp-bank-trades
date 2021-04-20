@@ -15,7 +15,7 @@ import org.junit.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 
-class TradeInProcessTests {
+class TradeSettleTests {
     lateinit var network: MockNetwork
     lateinit var a: StartedMockNode
     lateinit var b: StartedMockNode
@@ -45,19 +45,25 @@ class TradeInProcessTests {
     /**
      * Issue a Trade on the ledger, we need to do this before marking the trade as InProcess.
      */
-    private fun issueTrade(): SignedTransaction {
+    private fun inProcessTrade(): SignedTransaction {
         val assignedTo = b.info.legalIdentities.first()
         val flow = TradeInitiator(TradeInfo(1000), assignedTo)
         val future = a.startFlow(flow)
         network.runNetwork()
-        return future.getOrThrow()
+        val stx =  future.getOrThrow()
+
+        val tradeState = stx.tx.outputs.single().data as TradeState
+        val inProcessFlow = TradeInProcessInitiator(TradeInProcessInfo(tradeState.linearId.id.toString()))
+        val inProcessFuture = b.startFlow(inProcessFlow)
+        network.runNetwork()
+       return inProcessFuture.getOrThrow()
     }
 
     @Test
-    fun `flow returns correctly formed partially signed transaction`() {
-        val stx = issueTrade()
+    fun `flow returns correctly formed partially signed transaction` () {
+        val stx = inProcessTrade()
         val tradeState = stx.tx.outputs.single().data as TradeState
-        val flow = TradeInProcessInitiator(TradeInProcessInfo(tradeState.linearId.id.toString()))
+        val flow = TradeSettleInitiator(TradeInProcessInfo(tradeState.linearId.id.toString()))
         val future = b.startFlow(flow)
         network.runNetwork()
         val ptx = future.getOrThrow()
@@ -69,16 +75,16 @@ class TradeInProcessTests {
         val outputTrade = ptx.tx.outputs.single().data as TradeState
         println("Output state: $outputTrade")
         val command = ptx.tx.commands.single()
-        assert(command.value is TradeContract.Commands.InProcess)
+        assert(command.value is TradeContract.Commands.Settle)
         ptx.verifySignaturesExcept(b.info.chooseIdentityAndCert().party.owningKey, b.info.chooseIdentityAndCert().party.owningKey,
                 network.defaultNotaryNode.info.legalIdentitiesAndCerts.first().owningKey)
     }
 
     @Test
     fun `flow returns transaction signed by required parties` () {
-        val stx = issueTrade()
+        val stx = inProcessTrade()
         val inputTrade = stx.tx.outputs.single().data as TradeState
-        val flow = TradeInProcessInitiator(TradeInProcessInfo(inputTrade.linearId.id.toString()))
+        val flow = TradeSettleInitiator(TradeInProcessInfo(inputTrade.linearId.id.toString()))
         val future = b.startFlow(flow)
         network.runNetwork()
         val ptx = future.getOrThrow()
@@ -87,9 +93,9 @@ class TradeInProcessTests {
 
     @Test
     fun `flow records the same transaction in both party vaults` () {
-        val stx = issueTrade()
+        val stx = inProcessTrade()
         val inputTrade = stx.tx.outputs.single().data as TradeState
-        val flow = TradeInProcessInitiator(TradeInProcessInfo(inputTrade.linearId.id.toString()))
+        val flow = TradeSettleInitiator(TradeInProcessInfo(inputTrade.linearId.id.toString()))
         val future = b.startFlow(flow)
         network.runNetwork()
         val ptx = future.getOrThrow()

@@ -75,11 +75,17 @@ tasks.withType(org.jetbrains.kotlin.gradle.tasks.KotlinCompile).all {
 task runAsPartyA(type: JavaExec, dependsOn: assemble) {
     classpath = sourceSets.main.runtimeClasspath
     main = 'com.banks.trade.webserver.ServerKt'
-    args '--server.port=8086', '--config.rpc.host=localhost', '--config.rpc.port=10006', '--config.rpc.username=user1', '--config.rpc.password=test'
+    args '--server.port=8086', '--config.rpc.host=localhost', '--config.rpc.port=10005', '--config.rpc.username=user1', '--config.rpc.password=test'
 }
 
 task runAsPartyB(type: JavaExec, dependsOn: assemble) {
     classpath = sourceSets.main.runtimeClasspath
     main = 'com.banks.trade.webserver.ServerKt'
-    args '--server.port=8087', '--config.rpc.host=localhost', '--config.rpc.port=10009', '--config.rpc.username=user1', '--config.rpc.password=test'
+    args '--server.port=8087', '--config.rpc.host=localhost', '--config.rpc.port=10007', '--config.rpc.username=user1', '--config.rpc.password=test'
+}
+
+task runAsPartyC(type: JavaExec, dependsOn: assemble) {
+    classpath = sourceSets.main.runtimeClasspath
+    main = 'com.banks.trade.webserver.ServerKt'
+    args '--server.port=8088', '--config.rpc.host=localhost', '--config.rpc.port=10009', '--config.rpc.username=user1', '--config.rpc.password=test'
 }
