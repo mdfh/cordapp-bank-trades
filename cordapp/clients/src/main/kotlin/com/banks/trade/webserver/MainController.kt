@@ -29,7 +29,7 @@ val SERVICE_NAMES = listOf("Notary", "Network Map Service")
  *  A Spring Boot Server API controller for interacting with the node via RPC.
  */
 
-@CrossOrigin(origins = ["http://localhost:8081", "", ""], maxAge = 3600)
+@CrossOrigin(origins = ["http://localhost:8081", "http://127.0.0.1:8081"], maxAge = 3600)
 @RestController
 @RequestMapping("/api") // The paths for requests are relative to this base path.
 class MainController(rpc: NodeRPCConnection) {

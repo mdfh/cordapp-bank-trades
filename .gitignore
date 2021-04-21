@@ -54,10 +54,10 @@ lib/dokka.jar
 ## Plugin-specific files:
 
 # IntelliJ
-/out/
-workflows/out/
-contracts/out/
-clients/out/
+cordapp/out/
+cordapp/workflows/out/
+cordapp/contracts/out/
+cordapp/clients/out/
 
 # mpeltonen/sbt-idea plugin
 .idea_modules/
@@ -71,10 +71,10 @@ crashlytics.properties
 crashlytics-build.properties
 
 # docs related
-docs/virtualenv/
+cordapp/docs/virtualenv/
 
 # if you use the installQuasar task
-lib
+cordapp/lib
 
 
 #-----------------Flutter ----------------------
@@ -109,10 +109,10 @@ lib
 .packages
 .pub-cache/
 .pub/
-/build/
+web-app/build/
 
 # Web related
-lib/generated_plugin_registrant.dart
+web-app/lib/generated_plugin_registrant.dart
 
 # Symbolication related
 app.*.symbols
@@ -121,6 +121,6 @@ app.*.symbols
 app.*.map.json
 
 # Android Studio will place build artifacts here
-/android/app/debug
-/android/app/profile
-/android/app/release
+web-app/android/app/debug
+web-app/android/app/profile
+web-app/android/app/release

@@ -2,4 +2,4 @@
 
 ## Running Web client Server
 
-npx http-server -p 8081
+npx http-server -p 8081 -a 127.0.0.1
